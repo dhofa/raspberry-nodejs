@@ -1,0 +1,58 @@
+var ObjectID = require('mongodb').ObjectID
+
+module.exports = function(app, db) {
+	const database= db.db('rmvts')	
+	
+	app.get('/', (req, res) =>{
+		res.send('welcome to my site');
+	});
+	
+	app.get('/notes/:id', (req, res) =>{
+		const id = req.params.id;		
+		const details = {'_id' : new ObjectID(id)};	
+		database.collection('notes').findOne(details, (err, item) => {
+			if (err) {
+				res.send({ 'error': 'An error has occured' });
+			} else {
+				res.send(item);
+			}
+		});
+	});	
+	
+		app.put('/notes/:id', (req, res) =>{
+		const id = req.params.id;		
+		const details = {'_id' : new ObjectID(id)};	
+		const note = { text: req.body.message, title: req.body.title };
+		
+		database.collection('notes').update(details, note, (err, item) => {
+			if (err) {
+				res.send({ 'error': 'An error has occured' });
+			} else {
+				res.send(item);
+			}
+		});
+	});
+	
+		app.delete('/notes/:id', (req, res) =>{
+		const id = req.params.id;		
+		const details = {'_id' : new ObjectID(id)};	
+		database.collection('notes').remove(details, (err, item) => {
+			if (err) {
+				res.send({ 'error': 'An error has occured' });
+			} else {
+				res.send('Data '+ id + ' Telah dihapus');
+			}
+		});
+	});	
+	
+	app.post('/notes', (req, res) => {
+		const note = { text: req.body.message, title: req.body.title };
+		database.collection('notes').insert(note, (err, result) => {
+			if (err) {
+				res.send({ 'error': 'An error has occured' });
+			} else {
+				res.send(result.ops[0]);
+			}
+		});
+	});
+};

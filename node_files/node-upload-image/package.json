@@ -1,0 +1,17 @@
+{
+  "name": "upload-iamge-tugas-akhi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ardi-PC",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "express-session": "^1.15.6",
+    "multer": "^1.3.0",
+    "socket.io-client": "^2.0.4"
+  }
+}
