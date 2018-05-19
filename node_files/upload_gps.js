@@ -12,31 +12,38 @@ var RELAY2   = new gpio(17,'out');
 var RELAY3   = new gpio(27,'out');
 var RELAY4   = new gpio(22,'out');
 var ARUS     = new gpio(25,'in','both');
-
-//declare vibration & buzzer sensor
 var VIBRATION = new gpio(21,'in','both');
-//var BUZZER    = new gpio();
 
 //declare base URL API
-const BASE_BUZZER    = "http://192.168.8.100:3000/api/log-buzzer/create";
-const BASE_VIBRATION = "http://192.168.8.100:3000/api/log-vibration/create";
-const BASE_IGNITION  = "http://192.168.8.100:3000/api/log-ignition/create";
+const ID_USER        = "5af166ddaf533a4b9c3fc0d6";
+const BASE_URL       = "http://192.168.8.100:3000/"
+const BASE_BUZZER    = BASE_URL+"api/log-buzzer/create";
+const BASE_VIBRATION = BASE_URL+"api/log-vibration/create/${id_user}";
+const BASE_IGNITION  = BASE_URL+"api/log-ignition/create/${id_user}";
 //Base Relay
-const RELAY_GPS      = "http://192.168.8.100:3000/api/update-relay/gps";
-const RELAY_IGNITION = "http://192.168.8.100:3000/api/update-relay/ignition";
-const RELAY_VIBRATION= "http://192.168.8.100:3000/api/update-relay/vibration";
-const RELAY_BUZZER   = "http://192.168.8.100:3000/api/update-relay/buzzer";
-const BASE_RELAY_STATE = "http://192.168.8.100:3000/api/get-relay-state/${id_user}";
+const RELAY_GPS      = BASE_URL+"api/update-relay/gps";
+const RELAY_IGNITION = BASE_URL+"api/update-relay/ignition";
+const RELAY_VIBRATION= BASE_URL+"api/update-relay/vibration";
+const RELAY_BUZZER   = BASE_URL+"api/update-relay/buzzer";
+const BASE_RELAY_STATE = BASE_URL+"api/get-relay-state/${id_user}";
+//settup capture image
+const LOKASI_FOTO      = "/home/pi/FILE_FOTO/";
+const BASE_UPLOAD_FOTO = BASE_URL+"api/images/upload";
 
 //settup state relay from API
-getStateRelay(BASE_RELAY_STATE,'5af166ddaf533a4b9c3fc0d6');
-
+getStateRelay(BASE_RELAY_STATE,ID_USER);
 
 ARUS.watch(function(err, value){
+ if(err){
+  console.log('Error while Watching Current Sensor..');
+ }
  if(value == 1){
   console.log('Arus terdeteksi ');
- }else{
+  sc.emit('statusgps', {msg:true});
+ }
+ if(value == 0){
   console.log('tidak ada arus listrik ');
+  sc.emit('statusgps', {msg:false});
  }
 });
 
@@ -84,7 +91,8 @@ sc.on('relay2', (data) =>{
 
    if(i == 100){
     createLogActivity(BASE_VIBRATION,"Vibration Notification", "Vibration detected on your vehicle");
-  }
+    sc.emit('relay1', {msg:true});
+   }
   });
 
  }else{
@@ -100,10 +108,12 @@ sc.on('relay3', (data) =>{
   RELAY3.writeSync(1);
   console.log('relay3 aktif : ', data.msg);
   updateRelay(RELAY_IGNITION,true);
+  createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are OFF");
  }else{
   RELAY3.writeSync(0);
   console.log('relay3 aktif : ', data.msg);
   updateRelay(RELAY_IGNITION,false);
+  createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are ON");
  }
 });
 
@@ -122,12 +132,11 @@ sc.on('relay4', (data) =>{
 
 sc.on('ambilfoto', (data) => {
  console.log('menjalankan FOTO');
-
- exec('raspistill -o /home/pi/'+data.msg+'.jpg', (err, stout, sterr) => {
+ exec('raspistill -o '+LOKASI_FOTO+data.msg+'.jpg', (err, stout, sterr) => {
   console.log('stout: ', stout);
   console.log('sterr: ', sterr);
   //exec("curl -F file_foto=@/home/pi/"+data.msg+".jpg https://rmvts.herokuapp.com/api/images/upload", (err, stout, sterr) => {
-  exec("curl -F file_foto=@/home/pi/"+data.msg+".jpg http://192.168.8.102:3000/api/images/upload", (err, stout, sterr) => {
+  exec("curl -F id_user="+ID_USER+" -F file_foto=@"+LOKASI_FOTO+data.msg+".jpg "+BASE_UPLOAD_FOTO, (err, stout, sterr) => {
    console.log('stout: ', stout);
    console.log('sterr: ', sterr);
   });
@@ -175,12 +184,13 @@ function updateRelay(url, status){
 
 function createLogActivity(url,title,message){
   var args = {
-    data: { title: title, detail: message },
+    path   : { "id_user": ID_USER },
+    data   : { title: title, detail: message },
     headers: { "Content-Type": "application/json" }
   };
 
   client.post(url, args, function (data, response) {
-    //console.log(response);
+    console.log(response);
     console.log("Berhasil "+message);
   });
 }
@@ -189,15 +199,12 @@ function createLogActivity(url,title,message){
 
 function getStateRelay(url,id_user){
   var args = {
-    path: { "id_user": id_user},
+    path   : { "id_user": id_user},
     headers: { "Content-Type": "application/json" }
   };
 
   client.get(url, args, function (data, response) {
-//    console.log("state relay ",response);
     console.log("state relay data ",data);
-//    console.log("state relay "+data.vibration);
-//    console.log("state relay "+data.buzzer);
     if(data.ignition){
      RELAY3.writeSync(1);
     }else{
