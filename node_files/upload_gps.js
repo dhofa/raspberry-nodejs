@@ -17,14 +17,14 @@ var VIBRATION = new gpio(21,'in','both');
 //declare base URL API
 const ID_USER        = "5af166ddaf533a4b9c3fc0d6";
 const BASE_URL       = "http://192.168.8.100:3000/"
-const BASE_BUZZER    = BASE_URL+"api/log-buzzer/create";
+const BASE_BUZZER    = BASE_URL+"api/log-buzzer/create/${id_user}";
 const BASE_VIBRATION = BASE_URL+"api/log-vibration/create/${id_user}";
 const BASE_IGNITION  = BASE_URL+"api/log-ignition/create/${id_user}";
 //Base Relay
-const RELAY_GPS      = BASE_URL+"api/update-relay/gps";
-const RELAY_IGNITION = BASE_URL+"api/update-relay/ignition";
-const RELAY_VIBRATION= BASE_URL+"api/update-relay/vibration";
-const RELAY_BUZZER   = BASE_URL+"api/update-relay/buzzer";
+const RELAY_GPS      = BASE_URL+"api/update-relay/gps/${id_user}";
+const RELAY_IGNITION = BASE_URL+"api/update-relay/ignition/${id_user}";
+const RELAY_VIBRATION= BASE_URL+"api/update-relay/vibration/${id_user}";
+const RELAY_BUZZER   = BASE_URL+"api/update-relay/buzzer/${id_user}";
 const BASE_RELAY_STATE = BASE_URL+"api/get-relay-state/${id_user}";
 //settup capture image
 const LOKASI_FOTO      = "/home/pi/FILE_FOTO/";
@@ -77,20 +77,20 @@ sc.on('relay1', (data) => {
 });
 
 sc.on('relay2', (data) =>{
+ var i=0;
  if(data.msg){
   RELAY2.writeSync(0);
   console.log('relay2 aktif : ', data.msg);
   updateRelay(RELAY_VIBRATION,true);
 
-  i=0;
   VIBRATION.watch(function (err, value){
    if(value == 1){
     i++;
    }
-   console.log('ada getaran gaes');
+   console.log('ada getaran gaes',i);
 
-   if(i == 100){
-    createLogActivity(BASE_VIBRATION,"Vibration Notification", "Vibration detected on your vehicle");
+   if(i%100 == 0){
+   // createLogActivity(BASE_VIBRATION,"Vibration Notification", "Vibration detected on your vehicle");
     sc.emit('relay1', {msg:true});
    }
   });
@@ -121,11 +121,11 @@ sc.on('relay4', (data) =>{
  if(data.msg){
   RELAY4.writeSync(0);
   console.log('relay4 aktif : ', data.msg);
-  updateRelay(RELAY_IGNITION,true);
+  //updateRelay(RELAY_IGNITION,true);
  }else{
   RELAY4.writeSync(1);
   console.log('relay4 aktif : ', data.msg);
-  updateRelay(RELAY_IGNITION,false);
+  //updateRelay(RELAY_IGNITION,false);
  }
 });
 
@@ -172,12 +172,13 @@ sc.on('statusgps', (data) => {
 
 function updateRelay(url, status){
   var args = {
-   data: { state: status },
+   path   : { "id_user": ID_USER },
+   data   : { state: status },
    headers: { "Content-Type": "application/json" }
   };
 
   client.post(url, args, function (data, response) {
-    //console.log(response);
+    console.log("Berhasil Update Relay..");
   });
 }
 
@@ -223,6 +224,7 @@ function getStateRelay(url,id_user){
      RELAY2.writeSync(1);
     }
 
-    RELAY4.writeSync(1);
+     RELAY4.writeSync(0);
+
   });
 }
