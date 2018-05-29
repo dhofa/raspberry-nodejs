@@ -1,0 +1,10 @@
+[Unit]
+Description=Service GPS with Python
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/sudo /usr/bin/python /home/pi/RMVTS/python_files/getlanglong.py > /home/pi/RMVTS/python_files/gps-python.log 2>&1
+
+[Install]
+WantedBy=multi-user.target
