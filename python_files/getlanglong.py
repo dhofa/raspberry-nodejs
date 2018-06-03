@@ -8,7 +8,7 @@ import requests
 import urllib
 
 while True:
- port = "/dev/ttyS0"
+ port = "/dev/ttyAMA0"
  ser = serial.Serial(port, baudrate=9600, timeout=0.5)
  dataout = pynmea2.NMEAStreamReader()
  newdata = ser.readline()

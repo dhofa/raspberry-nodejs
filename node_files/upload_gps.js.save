@@ -1,6 +1,6 @@
 var io = require('socket.io-client');
-//var sc = io.connect('https://rmvts.herokuapp.com/');
-var sc = io.connect('http://192.168.8.100:3000/');
+var sc = io.connect('https://rmvts.herokuapp.com/');
+//var sc = io.connect('http://192.168.8.100:3000/');
 var exec = require('child_process').exec;
 var gpio = require('onoff').Gpio;
 var Client = require('node-rest-client').Client;
@@ -16,8 +16,8 @@ var VIBRATION = new gpio(21,'in','both');
 
 //declare base URL API
 const ID_USER        = "5af166ddaf533a4b9c3fc0d6";
-const BASE_URL       = "http://192.168.8.100:3000/"
-//const BASE_URL       = "https://rmvts.herokuapp.com/"
+//const BASE_URL       = "http://192.168.8.100:3000/"
+const BASE_URL       = "https://rmvts.herokuapp.com/"
 const BASE_BUZZER    = BASE_URL+"api/log-buzzer/create/${id_user}";
 const BASE_VIBRATION = BASE_URL+"api/log-vibration/create/${id_user}";
 const BASE_IGNITION  = BASE_URL+"api/log-ignition/create/${id_user}";
@@ -26,7 +26,6 @@ const RELAY_GPS      = BASE_URL+"api/update-relay/gps/${id_user}";
 const RELAY_IGNITION = BASE_URL+"api/update-relay/ignition/${id_user}";
 const RELAY_VIBRATION= BASE_URL+"api/update-relay/vibration/${id_user}";
 const RELAY_BUZZER   = BASE_URL+"api/update-relay/buzzer/${id_user}";
-const UPDATE_IGNITION= BASE_URL+"api/update-status-ignition/${id_user}";
 const BASE_RELAY_STATE = BASE_URL+"api/get-relay-state/${id_user}";
 //settup capture image
 const LOKASI_FOTO      = "/home/pi/FILE_FOTO/";
@@ -41,14 +40,9 @@ ARUS.watch(function(err, value){
  }
  if(value == 1){
   console.log('Arus terdeteksi ');
-
-  setTimeout(function(){
-   sc.emit('statusgps', {msg:true});
-  }, 5000);
-
-  updateStatusIgnition(UPDATE_IGNITION,"Aktif");
-
- }else{
+  sc.emit('statusgps', {msg:true});
+ }
+ if(value == 0){
   console.log('tidak ada arus listrik ');
   sc.emit('statusgps', {msg:false});
  }
@@ -58,7 +52,7 @@ sc.on('relay1', (data) => {
  if(data.msg){
   console.log('relay1 aktif : ', data.msg);
   RELAY1.writeSync(0);
-  updateRelay(RELAY_BUZZER,true);
+relay1  updateRelay(RELAY_BUZZER,true);
   createLogActivity(BASE_BUZZER,"Buzzer Notification", "Your Buzzer Already Running");
 
   //menjalankan alarm
@@ -100,12 +94,8 @@ sc.on('relay2', (data) =>{
    // createLogActivity(BASE_VIBRATION,"Vibration Notification", "Vibration detected on your vehicle");
     sc.emit('relay1', {msg:true});
    }
-   // default 1 menit alarm mati
-   setTimeout(function(){
-    sc.emit('relay1', {msg:false});
-   },60000);
-
   });
+
  }else{
   RELAY2.writeSync(1);
   console.log('relay2 aktif : ', data.msg);
@@ -182,18 +172,6 @@ sc.on('statusgps', (data) => {
 
 
 function updateRelay(url, status){
-  var args = {
-   path   : { "id_user": ID_USER },
-   data   : { state: status },
-   headers: { "Content-Type": "application/json" }
-  };
-
-  client.post(url, args, function (data, response) {
-    console.log("Berhasil Update Relay..");
-  });
-}
-
-function updateStatusIgnition(url, status){
   var args = {
    path   : { "id_user": ID_USER },
    data   : { state: status },

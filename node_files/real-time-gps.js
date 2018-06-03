@@ -1,6 +1,6 @@
 var io = require('socket.io-client');
-//var sc = io.connect('https://rmvts.herokuapp.com/');
-var sc = io.connect('http://192.168.8.101:3000/');
+var sc = io.connect('https://rmvts.herokuapp.com/');
+//var sc = io.connect('http://192.168.8.101:3000/');
 var SerialPort = require('serialport');
 var ReadLine   = SerialPort.parsers.Readline;
 var GPS = require('gps');
@@ -17,9 +17,9 @@ gps.on('data', function(data) {
 //  console.log('longitude :',gps.state.lon);
   console.log('latitude  :',data.lat);
   console.log('longitude :',data.lon);
-  console.log(data);
+//  console.log(data);
 
-//  sc.emit('send_data_to_server', {latitude: data.lat, longitude: data.lon});
+  sc.emit('send_data_to_server', {latitude: data.lat, longitude: data.lon});
 });
 
 port.on('data', function(data) {
